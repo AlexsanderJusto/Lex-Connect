@@ -1,0 +1,7 @@
+{
+  "name": "LexConnect Brasil",
+  "description": "Uma plataforma jurídica de próxima geração conectando clientes aos melhores advogados usando correspondência baseada em IA.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
