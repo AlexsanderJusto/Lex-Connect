@@ -5,7 +5,8 @@ import { Page, Lawyer } from './types';
 import { LAWYERS } from './constants';
 import LawyerCard from './components/LawyerCard';
 import StarRating from './components/StarRating';
-import { Search, MapPin, Filter, Phone, Award, GraduationCap, Clock, MessageCircle, MessageSquare, Gavel, Scale, Handshake } from 'lucide-react';
+import { askLegalAgent, AgentResponse } from './services/geminiService';
+import { Search, MapPin, Filter, Send, Sparkles, Phone, Award, GraduationCap, Clock, MessageCircle, MessageSquare, Gavel, Scale, Handshake, User } from 'lucide-react';
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('home');
@@ -33,12 +34,19 @@ const App: React.FC = () => {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-600">Conecta.</span>
             </h1>
             <p className="text-lg md:text-xl text-legal-100 mb-10 max-w-lg leading-relaxed font-light">
-              Encontre os advogados mais qualificados do Brasil. Uma plataforma personalizada para sua localização e necessidade jurídica específica.
+              Encontre os advogados mais qualificados do Brasil ou obtenha orientação instantânea com nossa IA especializada.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 w-full">
+               <button 
+                onClick={() => setCurrentPage('ai-agent')}
+                className="bg-gold-500 hover:bg-gold-600 text-white px-8 py-4 rounded-lg font-serif font-semibold text-lg flex items-center justify-center shadow-lg shadow-gold-500/20 transition-all transform hover:-translate-y-1"
+              >
+                <Sparkles className="mr-2" />
+                Falar com IA
+              </button>
               <button 
                 onClick={() => setCurrentPage('directory')}
-                className="bg-gold-500 hover:bg-gold-600 text-white px-8 py-4 rounded-lg font-serif font-semibold text-lg flex items-center justify-center shadow-lg shadow-gold-500/20 transition-all transform hover:-translate-y-1 min-w-[200px]"
+                className="bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 px-8 py-4 rounded-lg font-serif font-semibold text-lg flex items-center justify-center transition-all"
               >
                 <Search className="mr-2" />
                 Buscar Advogados
@@ -110,10 +118,10 @@ const App: React.FC = () => {
              </div>
              <div className="group p-8 rounded-2xl hover:bg-legal-50 transition-colors duration-300">
                 <div className="bg-legal-100 p-5 rounded-full mb-6 text-legal-800 w-20 h-20 mx-auto flex items-center justify-center group-hover:bg-legal-800 group-hover:text-gold-400 transition-colors duration-300">
-                  <Handshake size={32} />
+                  <MessageCircle size={32} />
                 </div>
-                <h3 className="text-xl font-bold mb-3 font-serif text-legal-900">Contato Direto</h3>
-                <p className="text-gray-500 leading-relaxed">Facilitamos a comunicação direta entre você e o advogado, sem intermediários ou burocracia desnecessária.</p>
+                <h3 className="text-xl font-bold mb-3 font-serif text-legal-900">Match Inteligente com IA</h3>
+                <p className="text-gray-500 leading-relaxed">Nossa IA analisa os detalhes do seu caso para conectar você ao profissional com maior chance de êxito.</p>
              </div>
           </div>
         </div>
@@ -198,6 +206,144 @@ const App: React.FC = () => {
               </div>
               <h3 className="text-lg font-medium text-gray-900">Nenhum advogado encontrado</h3>
               <p className="text-gray-500">Tente ajustar seus filtros de busca.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // 3. AI AGENT PAGE
+  const AIAgentPage = () => {
+    const [query, setQuery] = useState('');
+    const [history, setHistory] = useState<{role: 'user' | 'model', content: string}[]>([
+      { role: 'model', content: "Olá. Sou o Assistente Jurídico da LexConnect. Posso responder a perguntas jurídicas gerais e conectá-lo a advogados especializados no seu problema. Como posso ajudar você hoje?" }
+    ]);
+    const [loading, setLoading] = useState(false);
+    const [recommendations, setRecommendations] = useState<Lawyer[]>([]);
+
+    const handleSend = async () => {
+      if (!query.trim()) return;
+      
+      const userMessage = query;
+      setQuery('');
+      setHistory(prev => [...prev, { role: 'user', content: userMessage }]);
+      setLoading(true);
+
+      try {
+        const response: AgentResponse = await askLegalAgent(userMessage);
+        
+        setHistory(prev => [...prev, { role: 'model', content: response.answer }]);
+        
+        if (response.recommendedLawyerIds && response.recommendedLawyerIds.length > 0) {
+          const matchedLawyers = LAWYERS.filter(l => response.recommendedLawyerIds.includes(l.id));
+          setRecommendations(matchedLawyers);
+        }
+      } catch (error) {
+        setHistory(prev => [...prev, { role: 'model', content: "Desculpe, encontrei um erro ao processar sua solicitação." }]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    return (
+      <div className="h-[calc(100vh-80px)] flex flex-col md:flex-row bg-slate-50">
+        {/* Chat Area */}
+        <div className="flex-1 flex flex-col h-full bg-white md:rounded-tr-2xl shadow-xl z-10">
+          <div className="p-4 border-b border-gray-100 bg-white flex items-center justify-between">
+             <div className="flex items-center">
+               <div className="bg-gold-100 p-2 rounded-lg mr-3">
+                 <Sparkles className="text-gold-600" size={20} />
+               </div>
+               <div>
+                 <h2 className="font-serif font-bold text-legal-900">Assistente IA</h2>
+                 <p className="text-xs text-green-600 font-medium flex items-center"><span className="w-2 h-2 bg-green-500 rounded-full mr-1"></span> Online</p>
+               </div>
+             </div>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50">
+            {history.map((msg, idx) => (
+              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[85%] rounded-2xl px-6 py-4 shadow-sm ${
+                  msg.role === 'user' 
+                    ? 'bg-legal-900 text-white rounded-br-none' 
+                    : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none'
+                }`}>
+                  {msg.role === 'model' && (
+                    <div className="flex items-center mb-2 border-b border-gray-100 pb-2">
+                      <Scale size={14} className="text-gold-500 mr-2" />
+                      <span className="text-xs font-bold uppercase text-gold-600 tracking-wider">LexConnect AI</span>
+                    </div>
+                  )}
+                  <div className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</div>
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-none px-6 py-4 shadow-sm flex items-center space-x-2">
+                  <span className="text-xs text-gray-400 font-medium mr-2">Analisando caso</span>
+                  <div className="w-1.5 h-1.5 bg-gold-400 rounded-full animate-bounce"></div>
+                  <div className="w-1.5 h-1.5 bg-gold-400 rounded-full animate-bounce delay-75"></div>
+                  <div className="w-1.5 h-1.5 bg-gold-400 rounded-full animate-bounce delay-150"></div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="p-4 bg-white border-t border-gray-100">
+            <div className="relative">
+              <textarea
+                className="w-full border border-gray-200 bg-gray-50 rounded-xl pl-4 pr-14 py-4 focus:ring-2 focus:ring-gold-500 focus:border-transparent resize-none focus:bg-white transition-colors"
+                rows={2}
+                placeholder="Descreva seu problema jurídico (ex: 'Preciso de ajuda com divórcio em SP')..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+              />
+              <button 
+                onClick={handleSend}
+                disabled={loading || !query.trim()}
+                className="absolute right-3 bottom-3 p-2.5 bg-legal-900 text-white rounded-lg hover:bg-legal-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md"
+              >
+                <Send size={18} />
+              </button>
+            </div>
+            <p className="text-[10px] text-gray-400 text-center mt-2">A IA pode cometer erros. Verifique informações importantes com um advogado.</p>
+          </div>
+        </div>
+
+        {/* Recommendations Sidebar */}
+        <div className="w-full md:w-80 lg:w-96 bg-gray-50 p-4 border-l border-gray-200 overflow-y-auto h-[30vh] md:h-auto">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center">
+            <User size={14} className="mr-2" /> Advogados Recomendados
+          </h3>
+          
+          {recommendations.length > 0 ? (
+            <div className="space-y-4">
+              {recommendations.map(lawyer => (
+                <LawyerCard 
+                  key={lawyer.id} 
+                  lawyer={lawyer} 
+                  compact 
+                  onClick={(id) => { setSelectedLawyerId(id); setCurrentPage('profile'); }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16 px-4 border-2 border-dashed border-gray-200 rounded-xl">
+              <div className="bg-white rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3 shadow-sm">
+                <Search className="text-gray-300" size={20} />
+              </div>
+              <p className="text-gray-400 text-sm font-medium">
+                Descreva seu caso no chat para receber recomendações personalizadas.
+              </p>
             </div>
           )}
         </div>
@@ -336,6 +482,7 @@ const App: React.FC = () => {
       <Layout currentPage={currentPage} onNavigate={setCurrentPage}>
         {currentPage === 'home' && <HomePage />}
         {currentPage === 'directory' && <DirectoryPage />}
+        {currentPage === 'ai-agent' && <AIAgentPage />}
         {currentPage === 'profile' && <ProfilePage />}
       </Layout>
     </HashRouter>

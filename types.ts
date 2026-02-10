@@ -21,4 +21,4 @@ export interface Review {
   text: string;
 }
 
-export type Page = 'home' | 'directory' | 'profile';
+export type Page = 'home' | 'directory' | 'profile' | 'ai-agent';
