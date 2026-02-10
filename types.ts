@@ -21,11 +21,4 @@ export interface Review {
   text: string;
 }
 
-export interface ChatMessage {
-  id: string;
-  role: 'user' | 'model';
-  content: string;
-  recommendedLawyers?: string[]; // IDs of recommended lawyers
-}
-
-export type Page = 'home' | 'directory' | 'ai-agent' | 'profile';
+export type Page = 'home' | 'directory' | 'profile';

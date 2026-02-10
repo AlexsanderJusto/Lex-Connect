@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Scale, Search, MessageSquare, User, Menu, X, Home } from 'lucide-react';
+import { Scale, Search, Menu, X, Home } from 'lucide-react';
 import { Page } from '../types';
 
 interface LayoutProps {
@@ -14,7 +14,6 @@ const Layout: React.FC<LayoutProps> = ({ currentPage, onNavigate, children }) =>
   const navItems = [
     { id: 'home', label: 'Início', icon: Home },
     { id: 'directory', label: 'Encontrar Advogado', icon: Search },
-    { id: 'ai-agent', label: 'Assistente Jurídico IA', icon: MessageSquare },
   ];
 
   const handleNav = (page: Page) => {
@@ -122,7 +121,6 @@ const Layout: React.FC<LayoutProps> = ({ currentPage, onNavigate, children }) =>
               <h4 className="text-gold-400 font-serif font-semibold mb-6 tracking-wide">Plataforma</h4>
               <ul className="space-y-3 text-sm">
                 <li><a href="#" className="hover:text-white transition-colors">Encontrar Advogados</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Assistente IA</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Como Funciona</a></li>
               </ul>
             </div>
@@ -145,7 +143,7 @@ const Layout: React.FC<LayoutProps> = ({ currentPage, onNavigate, children }) =>
           </div>
           <div className="mt-12 pt-8 border-t border-legal-800 text-center text-sm opacity-50 flex flex-col md:flex-row justify-between items-center">
             <span>© {new Date().getFullYear()} LexConnect Brasil. Todos os direitos reservados.</span>
-            <span className="mt-2 md:mt-0">Desenvolvido com IA & Excelência</span>
+            <span className="mt-2 md:mt-0">Desenvolvido com Excelência</span>
           </div>
         </div>
       </footer>
